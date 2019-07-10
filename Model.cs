@@ -24,7 +24,7 @@ namespace DefferedRendering
         {
             LoadObj loadObj = new LoadObj();
 
-            loadObj.Load(new System.IO.StreamReader(path), LoadObj.LoadData.VerticesAndNormals);
+            loadObj.Load(new System.IO.StreamReader(path), LoadObj.LoadData.VerticesNormalsAndTexCoords);
 
             vertices = loadObj.Vertices.Count;
 
