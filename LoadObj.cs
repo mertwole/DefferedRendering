@@ -17,6 +17,8 @@ namespace DefferedRendering
         {         
             public Vector3 position;
             public Vector3 normal;
+            public Vector3 tangent;
+            public Vector3 bitangent;
             public Vector2 tex_coord;
         }
 
@@ -84,6 +86,26 @@ namespace DefferedRendering
                     IEnumerator<int> verts = ParseStringToEnumaratorI(curr_line);
 
                     Vertices.AddRange(vertParser(verts));
+                }
+            }
+
+            for(int i = 0; i < Vertices.Count; i+= 3)
+            {
+                var deltaUV0 = Vertices[i].tex_coord - Vertices[1 + 1].tex_coord;
+                var deltaPos0 = Vertices[i].position - Vertices[i + 1].position;
+                var deltaUV1 = Vertices[i].tex_coord - Vertices[i + 2].tex_coord;
+                var deltaPos1 = Vertices[i].position - Vertices[i + 2].position;
+
+                float denominator = 1 / (deltaUV0.X * deltaUV1.Y - deltaUV0.Y * deltaUV1.X);
+                var tangent = (deltaPos0 * deltaUV1.Y - deltaPos1 * deltaUV0.Y) * denominator;
+                var bitangent = (deltaPos1 * deltaUV0.X - deltaPos0 * deltaUV1.X) * denominator;
+
+                for (int j = i; j < i + 2; j++)
+                {
+                    var vert = Vertices[j];
+                    vert.tangent = tangent;
+                    vert.bitangent = bitangent;
+                    Vertices[j] = vert;
                 }
             }
         }

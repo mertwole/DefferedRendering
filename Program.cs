@@ -108,14 +108,14 @@ namespace DefferedRendering
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, GbufferPositionTex);
                 SetTexParametersNearest();
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, window_width, window_height, 0, PixelFormat.Rgb, PixelType.Float, IntPtr.Zero);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb32f, window_width, window_height, 0, PixelFormat.Rgb, PixelType.Float, IntPtr.Zero);
                 GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, GbufferPositionTex, 0);
 
                 GbufferNormalTex = GL.GenTexture();
                 GL.ActiveTexture(TextureUnit.Texture1);
                 GL.BindTexture(TextureTarget.Texture2D, GbufferNormalTex);
                 SetTexParametersNearest();
-                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, window_width, window_height, 0, PixelFormat.Rgb, PixelType.Float, IntPtr.Zero);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb16f, window_width, window_height, 0, PixelFormat.Rgb, PixelType.Float, IntPtr.Zero);
                 GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment1, TextureTarget.Texture2D, GbufferNormalTex, 0);
 
 
@@ -160,16 +160,16 @@ namespace DefferedRendering
 
             #region PBR textures
 
-            Bitmap albedo_map = (Bitmap)Image.FromFile("textures/albedo.bmp");
+            Bitmap albedo_map = (Bitmap)Image.FromFile("textures/albedo.jpg");
             albedo_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-            Bitmap roughness_map = (Bitmap)Image.FromFile("textures/roughness.bmp");
+            Bitmap roughness_map = (Bitmap)Image.FromFile("textures/roughness.jpg");
             roughness_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-            Bitmap metall_map = (Bitmap)Image.FromFile("textures/metall.bmp");
+            Bitmap metall_map = (Bitmap)Image.FromFile("textures/metall.jpg");
             metall_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-            Bitmap normals_map = (Bitmap)Image.FromFile("textures/normals.bmp");
+            Bitmap normals_map = (Bitmap)Image.FromFile("textures/normals.jpg");
             normals_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
             int map_width = albedo_map.Width;
@@ -216,7 +216,7 @@ namespace DefferedRendering
             roughness_map.UnlockBits(rough_data);
             #endregion
 
-            dragon.Load("wrenches.obj");
+            dragon.Load("spaceship.obj");
         }
 
         Model dragon = new Model();
@@ -245,6 +245,8 @@ namespace DefferedRendering
             {
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
                 GL.Disable(EnableCap.DepthTest);
+
+                GL.Uniform3(GL.GetUniformLocation(lightingPassShader, "view_point"), camera.Pos);
 
                 GL.BindVertexArray(quadVAO);
                 {
