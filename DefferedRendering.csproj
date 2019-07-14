@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1E6C7B12-16B5-44AE-A717-151EB34C383A}</ProjectGuid>
+    <ProjectGuid>{CCFC55AC-90F0-429D-BFEB-D7A859C731B6}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>DefferedRendering</RootNamespace>
     <AssemblyName>DefferedRendering</AssemblyName>

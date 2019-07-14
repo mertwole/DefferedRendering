@@ -160,16 +160,16 @@ namespace DefferedRendering
 
             #region PBR textures
 
-            Bitmap albedo_map = (Bitmap)Image.FromFile("textures/albedo.jpg");
+            Bitmap albedo_map = (Bitmap)Image.FromFile("textures/albedo.bmp");
             albedo_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-            Bitmap roughness_map = (Bitmap)Image.FromFile("textures/roughness.jpg");
+            Bitmap roughness_map = (Bitmap)Image.FromFile("textures/roughness.bmp");
             roughness_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-            Bitmap metall_map = (Bitmap)Image.FromFile("textures/metall.jpg");
+            Bitmap metall_map = (Bitmap)Image.FromFile("textures/metall.bmp");
             metall_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
-            Bitmap normals_map = (Bitmap)Image.FromFile("textures/normals.jpg");
+            Bitmap normals_map = (Bitmap)Image.FromFile("textures/normals.bmp");
             normals_map.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
             int map_width = albedo_map.Width;
@@ -195,8 +195,9 @@ namespace DefferedRendering
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2DArray);
 
             albedo_map.UnlockBits(alb_data);
+            albedo_map.Dispose();
             normals_map.UnlockBits(norm_data);
-
+            normals_map.Dispose();
 
             int MetallRoughness = GL.GenTexture();
             GL.ActiveTexture(TextureUnit.Texture9);
@@ -213,10 +214,12 @@ namespace DefferedRendering
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2DArray);
 
             metall_map.UnlockBits(met_data);
+            metall_map.Dispose();
             roughness_map.UnlockBits(rough_data);
+            roughness_map.Dispose();
             #endregion
 
-            dragon.Load("spaceship.obj");
+            dragon.Load("stanford-dragon.obj");
         }
 
         Model dragon = new Model();
