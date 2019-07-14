@@ -1,5 +1,8 @@
 #version 330 core
 
+#define INV_PI 0.3183098861
+#define SSAO
+
 out vec4 color;
 
 in vec2 tex;
@@ -18,8 +21,22 @@ struct PointLight
 	vec3 color;
 };
 
-#define INV_PI 0.3183098861
+#ifdef SSAO
 
+	in mat4 transform_mat;
+
+	#define AO_SAMPLES_COUNT 64
+	uniform vec3[AO_SAMPLES_COUNT] AOSamples;
+
+	vec2 GetTexCoordByWorld(vec3 world)
+	{
+		vec4 NDC = transform_mat * vec4(world, 1);
+		return ((NDC.xy / NDC.w) + vec2(1)) * 0.5;
+	}
+
+#endif
+
+//----------------------PBR------------------------
 PointLight[] PointLights = 
 {
 	{vec3(0, 0, 3), vec3(1)}
@@ -43,7 +60,7 @@ vec3 Frenel(vec3 reflected, float NLangle_cos)
 {
 	return reflected + (vec3(1) - reflected) * pow(1 - NLangle_cos, 5);
 }
-
+//-------------------------------------------------
 void main()
 {
 	vec3 position = texture(g_position, tex).xyz;
@@ -52,6 +69,7 @@ void main()
 	float metallic = texture(g_metallic, tex).x;
 	float sqr_roughness = texture(g_roughness, tex).x;
 	sqr_roughness *= sqr_roughness;
+	int void_multiplier = all(equal(normal, vec3(0))) ? 0 : 1;// if no objects equals 0
 
 	vec3 res_color;
 
@@ -90,6 +108,34 @@ void main()
 		}
 	}
 
+	
+
+	#ifdef SSAO
+	
+	float AO = 0;
+
+	for(int i = 0; i < AO_SAMPLES_COUNT; i++)
+	{
+		vec3 currSample = AOSamples[i];
+		currSample *= sign(dot(currSample, normal));// Generate hemisphere from sphere by mirroring vectors
+		currSample += position;
+
+		vec2 SampleTex = GetTexCoordByWorld(currSample);
+		vec3 camPosToSurface = texture(g_position, SampleTex).xyz - view_point;
+		vec3 camPosToCurrSample = currSample - view_point;
+
+		// if currSample.sqrLength > surfacePos.sqrLength it means that sample lies under surface
+		AO += max(0, sign(dot(camPosToCurrSample, camPosToCurrSample) - dot(camPosToSurface, camPosToSurface)));
+	}
+
+	AO /= AO_SAMPLES_COUNT;
+	AO = (1 - AO) * void_multiplier;
+ 
+	res_color *= AO;
+
+	#endif
+
+	// HDR
 	res_color = res_color / (res_color + vec3(1));
 	res_color = pow(res_color, vec3(1 / 2.2));
 

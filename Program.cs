@@ -40,13 +40,18 @@ namespace DefferedRendering
 
         int quadVAO, quadVBO;
 
+
+        const bool DEFINE_SSAO = true;
+        const int SSAO_SAMPLES = 64;
+        const float SSAO_RADIUS = 0.01f;
+
         protected override void OnLoad(EventArgs E)
         {
             base.OnLoad(E);
 
             GL.ClearColor(Color.Black);
 
-            #region shaders
+            #region shaders & uniforms
            
             lightingPassShader = CompileShaders.Compile(new System.IO.StreamReader("frag_shader_lighting_pass.glsl"), new System.IO.StreamReader("vert_shader_lighting_pass.glsl"));
             GL.UseProgram(lightingPassShader);
@@ -56,6 +61,28 @@ namespace DefferedRendering
             GL.Uniform1(GL.GetUniformLocation(lightingPassShader, "g_albedo"), 2);
             GL.Uniform1(GL.GetUniformLocation(lightingPassShader, "g_metallic"), 3);
             GL.Uniform1(GL.GetUniformLocation(lightingPassShader, "g_roughness"), 4);
+
+            if(DEFINE_SSAO)
+            {
+                GL.UniformMatrix4(GL.GetUniformLocation(lightingPassShader, "model_mat"), false, ref model);
+                GL.UniformMatrix4(GL.GetUniformLocation(lightingPassShader, "projection_mat"), false, ref projection);
+
+                Random rand = new Random();
+
+                for(int i = 0; i < SSAO_SAMPLES; i++)
+                {
+                    Vector3 sample = new Vector3(rand.Next(1024) / 1024f, rand.Next(1024) / 1024f, rand.Next(1024) / 1024f);
+                    sample.Normalize();
+
+                    //quadratic distribution of sample lengths
+                    float len_clamped = (rand.Next(1024) / 1024f);
+                    sample *= len_clamped * len_clamped;
+
+                    sample *= SSAO_RADIUS;
+
+                    GL.Uniform3(GL.GetUniformLocation(lightingPassShader, "AOSamples["+ i.ToString() + "]"), sample);
+                }
+            }
 
             geometryPassShader = CompileShaders.Compile(new System.IO.StreamReader("frag_shader_geom_pass.glsl"), new System.IO.StreamReader("vert_shader_geom_pass.glsl"));
             GL.UseProgram(geometryPassShader);
@@ -107,7 +134,13 @@ namespace DefferedRendering
                 GbufferPositionTex = GL.GenTexture();
                 GL.ActiveTexture(TextureUnit.Texture0);
                 GL.BindTexture(TextureTarget.Texture2D, GbufferPositionTex);
-                SetTexParametersNearest();
+                if (DEFINE_SSAO)
+                {
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)All.Linear);
+                    GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)All.Linear);
+                }
+                else
+                    SetTexParametersNearest();
                 GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb32f, window_width, window_height, 0, PixelFormat.Rgb, PixelType.Float, IntPtr.Zero);
                 GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, GbufferPositionTex, 0);
 
@@ -232,13 +265,14 @@ namespace DefferedRendering
         {
             base.OnRenderFrame(E);
 
+            Matrix4 view = camera.Matrix;
+
             GL.UseProgram(geometryPassShader);
             {
                 GL.BindFramebuffer(FramebufferTarget.Framebuffer, Gbuffer);
                 GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);                
                 GL.Enable(EnableCap.DepthTest);
-
-                Matrix4 view = camera.Matrix;              
+                              
                 GL.UniformMatrix4(GL.GetUniformLocation(geometryPassShader, "view_mat"), false, ref view);
 
                 dragon.Draw();
@@ -250,6 +284,9 @@ namespace DefferedRendering
                 GL.Disable(EnableCap.DepthTest);
 
                 GL.Uniform3(GL.GetUniformLocation(lightingPassShader, "view_point"), camera.Pos);
+
+                if(DEFINE_SSAO)
+                    GL.UniformMatrix4(GL.GetUniformLocation(lightingPassShader, "view_mat"), false, ref view);
 
                 GL.BindVertexArray(quadVAO);
                 {
